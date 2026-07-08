@@ -53,8 +53,8 @@ l_mc = Math.sqrt(span * span + mid_chord_offset * mid_chord_offset)
 Xf = (sweep * (root_chord + 2 * tip_chord)) / (3 * (root_chord + tip_chord))
    + (1 / 6) * (root_chord + tip_chord - (root_chord * tip_chord) / (root_chord + tip_chord))
 
-// Approximate CP spanwise position (at 1/3 span from root, standard approximation)
-Yf_cp = span / 3
+// Exact CP spanwise position (on the Mean Aerodynamic Chord)
+Yf_cp = (span / 3) * (root_chord + 2 * tip_chord) / (root_chord + tip_chord)
 ```
 
 ```{ojs}
@@ -270,25 +270,25 @@ The diagram below shows a simplified side view of the rocket. The **blue triangl
 //| echo: false
 {
   const total_length = nose_length + body_length;
-  const rocketY = 50; // vertical center
+  const rocketY = 150; // vertical center
   const scaleX = 600 / total_length; // fit within 600px width
-  const halfBody = (body_diameter / 2) * scaleX * 0.6; // visual half-height
+  const halfBody = (body_diameter / 2) * scaleX; // true scale half-height
 
   const cgX = cg_position * scaleX;
   const cpX = Xcp_total * scaleX;
   const noseEnd = nose_length * scaleX;
   const finStart = fin_position * scaleX;
 
-  // Fin visual params
-  const finH = span * scaleX * 0.4;
-  const finRootLen = root_chord * scaleX * 0.5;
-  const finTipLen = tip_chord * scaleX * 0.5;
-  const finSweepLen = sweep * scaleX * 0.5;
+  // Fin visual params (true scale)
+  const finH = span * scaleX;
+  const finRootLen = root_chord * scaleX;
+  const finTipLen = tip_chord * scaleX;
+  const finSweepLen = sweep * scaleX;
 
   const svg = d3.create("svg")
-    .attr("viewBox", `0 0 650 120`)
+    .attr("viewBox", `0 0 650 300`)
     .attr("width", "100%")
-    .attr("height", 120)
+    .attr("height", 300)
     .style("max-width", "700px");
 
   // Nose cone
