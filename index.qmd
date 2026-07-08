@@ -12,7 +12,7 @@ Our goal is to provide clear, interactive, and highly visual explanations of com
 
 Currently, this manual covers:
 
-* **[Fin Design](fin-design.qmd)**: Understand the impact of fin geometry on stability and aerodynamics through interactive sliders and visualizations.
+* **[Fin Design & Stability](fin-design.qmd)**: Understand fin geometry, the Barrowman equations, and compute your rocket's stability margin through interactive calculators and visualizations.
 
 *More chapters on propulsion, recovery systems, and structures will be added soon.*
 
