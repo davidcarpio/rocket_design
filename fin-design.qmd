@@ -1,4 +1,4 @@
-# Fin Design & Stability Analysis
+# Fin Design & Stability Fundamentals
 
 ## Introduction
 
@@ -20,385 +20,193 @@ $$
 A stability margin of **1.0 to 2.0 calibers** is generally considered ideal for model rockets. Less than 1.0 caliber is marginally stable; less than 0.5 is unstable.
 :::
 
-The **Barrowman equations** (1966) provide an analytical method to compute the CP location for slender, finned rockets at small angles of attack. This chapter derives and implements them interactively.
+The **Barrowman equations** (1966) provide an analytical method to compute the CP location for slender, finned rockets at small angles of attack. The specific formulas depend on the **fin planform geometry** chosen.
 
 ---
 
-## Fin Geometry Definitions
+## Fin Planform Geometries
 
-A standard **trapezoidal fin** is defined by four geometric parameters:
+Fin shape—or *planform*—directly impacts aerodynamic performance, structural behavior, and manufacturing complexity. The most common planforms used in rocketry are summarized below.
+
+### Taxonomy
+
+| Geometry | Key Parameters | Taper Ratio ($\lambda$) | Character |
+|:---------|:---------------|:----------------------:|:----------|
+| **Rectangular** | $C_r$, $s$ | $\lambda = 1$ | Simple to build. Higher drag at transonic speeds |
+| **Delta** | $C_r$, $s$, $\ell_m$ | $\lambda = 0$ | Low drag, structurally stiff. Common in HPR |
+| **Clipped Delta** | $C_r$, $C_t$, $s$, $\ell_m$ | $0 < \lambda < 1$ | Good all-around compromise — most popular for HPR |
+| **Trapezoidal** | $C_r$, $C_t$, $s$, $\ell_m$ | $0 < \lambda < 1$ | General form; clipped delta is a special case |
+| **Elliptical** | $C_r$, $s$ | N/A | Minimum induced drag (same principle as Spitfire wings) |
+
+### Shape Comparison
+
+Use the sliders below to see all five planforms drawn to the same scale.
 
 ```{ojs}
 //| echo: false
 //| panel: input
-viewof root_chord = Inputs.range([1, 20], {value: 10, step: 0.1, label: "Root Chord (Cr) [cm]"})
-viewof tip_chord = Inputs.range([0, 20], {value: 5, step: 0.1, label: "Tip Chord (Ct) [cm]"})
-viewof span = Inputs.range([1, 20], {value: 8, step: 0.1, label: "Fin Span (s) [cm]"})
-viewof sweep = Inputs.range([0, 20], {value: 4, step: 0.1, label: "Sweep Length (ℓm) [cm]"})
-```
-
-| Parameter | Symbol | Description |
-|:----------|:------:|:------------|
-| **Root Chord** | $C_r$ | Length of the fin edge attached to the body tube |
-| **Tip Chord** | $C_t$ | Length of the fin at its outermost edge |
-| **Span** | $s$ | Radial distance from the body surface to the fin tip |
-| **Sweep Length** | $\ell_m$ | Longitudinal offset of the tip leading edge from the root leading edge |
-| **Taper Ratio** | $\lambda = C_t / C_r$ | Ratio of tip chord to root chord (0 = delta, 1 = rectangular) |
-
-### Fin Shape Visualization
-
-The blue shape below shows the fin planform. The **red dot** marks the aerodynamic center of pressure for this single fin (computed via the Barrowman formula in the next section).
-
-```{ojs}
-//| echo: false
-
-// --- Derived Geometry ---
-fin_area = (root_chord + tip_chord) / 2 * span
-taper_ratio = tip_chord / root_chord
-
-// Mid-chord line length (distance between midpoints of root and tip chords)
-mid_chord_offset = sweep + tip_chord / 2 - root_chord / 2
-l_mc = Math.sqrt(span * span + mid_chord_offset * mid_chord_offset)
-
-// --- Center of Pressure (single fin, from root leading edge) ---
-// Barrowman formula for CP of a trapezoidal fin
-Xf = (sweep * (root_chord + 2 * tip_chord)) / (3 * (root_chord + tip_chord))
-   + (1 / 6) * (root_chord + tip_chord - (root_chord * tip_chord) / (root_chord + tip_chord))
-
-// Approximate CP spanwise position (at 1/3 span from root, standard approximation)
-Yf_cp = span / 3
+viewof comp_cr = Inputs.range([4, 20], {value: 10, step: 0.5, label: "Root Chord Cr [cm]"})
+viewof comp_span = Inputs.range([3, 15], {value: 8, step: 0.5, label: "Span s [cm]"})
 ```
 
 ```{ojs}
 //| echo: false
 {
-  const margin = 2;
-  const xMax = Math.max(root_chord, sweep + tip_chord) + margin;
-  const yMax = span + margin;
+  // Derived parameters
+  const cr = comp_cr;
+  const s = comp_span;
+  const ct_clipped = cr * 0.4;  // λ ≈ 0.4 for clipped delta
+  const sweep_delta = cr * 0.7; // typical sweep for delta
+  const sweep_clipped = cr * 0.5;
 
-  return Plot.plot({
-    aspectRatio: 1,
-    width: 500,
-    x: {label: "Length [cm]", domain: [0, xMax]},
-    y: {label: "Span [cm]", domain: [0, yMax]},
-    marks: [
-      // Fin shape (filled polygon)
-      Plot.line(
-        [
-          {x: 0, y: 0},
-          {x: sweep, y: span},
-          {x: sweep + tip_chord, y: span},
-          {x: root_chord, y: 0},
-          {x: 0, y: 0}
-        ],
-        {x: "x", y: "y", fill: "steelblue", fillOpacity: 0.4, stroke: "steelblue", strokeWidth: 2}
-      ),
-      // Dimension annotations — root chord
-      Plot.text([{x: root_chord / 2, y: -0.6}], {text: d => `Cr = ${root_chord.toFixed(1)}`, fontSize: 11, fill: "#333"}),
-      // Dimension annotations — tip chord
-      Plot.text([{x: sweep + tip_chord / 2, y: span + 0.6}], {text: d => `Ct = ${tip_chord.toFixed(1)}`, fontSize: 11, fill: "#333"}),
-      // Dimension annotations — span (vertical)
-      Plot.text([{x: -0.8, y: span / 2}], {text: d => `s`, fontSize: 12, fill: "#555", fontWeight: "bold"}),
-      // Sweep arrow annotation
-      Plot.text([{x: sweep / 2, y: span + 1.0}], {text: d => `ℓm = ${sweep.toFixed(1)}`, fontSize: 10, fill: "#888"}),
-      // Center of Pressure dot
-      Plot.dot([{x: Xf, y: Yf_cp}], {fill: "red", r: 6, title: "Center of Pressure"}),
-      Plot.text([{x: Xf + 1.2, y: Yf_cp}], {text: d => "CP", fill: "red", fontWeight: "bold", fontSize: 12})
-    ]
-  });
-}
-```
-
----
-
-## Barrowman Equations for Fins
-
-The Barrowman method computes two quantities for each rocket component: the **normal force coefficient derivative** $C_{N\alpha}$ and the **center of pressure** $X_{CP}$. For a set of trapezoidal fins, the key equations are:
-
-### Fin Planform Area
-
-$$
-A_f = \frac{C_r + C_t}{2} \cdot s
-$$
-
-### Mid-Chord Line Length
-
-The mid-chord line connects the midpoints of the root and tip chords. Its length governs the effective sweep:
-
-$$
-\ell_{mc} = \sqrt{s^2 + \left(\ell_m + \frac{C_t - C_r}{2}\right)^2}
-$$
-
-### Normal Force Coefficient Derivative
-
-For a set of $N$ fins on a body of diameter $d$:
-
-$$
-(C_{N\alpha})_F = \frac{4\,N\,(s/d)^2}{1 + \sqrt{1 + \left(\dfrac{2\,\ell_{mc}}{C_r + C_t}\right)^2}}
-$$
-
-This equation tells us how much restoring force the fins generate per radian of angle of attack. Higher values mean the fins are more effective at keeping the rocket aligned.
-
-### Fin-Body Interference Factor
-
-The presence of the body tube accelerates airflow near the fin roots, increasing their effective lift. For 3 or 4 fins:
-
-$$
-K_{fb} = 1 + \frac{R}{s + R}
-$$
-
-where $R = d/2$ is the body radius. The corrected coefficient is:
-
-$$
-(C_{N\alpha})_F^{\text{corrected}} = (C_{N\alpha})_F \cdot K_{fb}
-$$
-
-### Fin Set Center of Pressure
-
-The CP of the fin set, measured from the **fin root leading edge**:
-
-$$
-X_f = \frac{\ell_m\,(C_r + 2\,C_t)}{3\,(C_r + C_t)} + \frac{1}{6}\left(C_r + C_t - \frac{C_r\,C_t}{C_r + C_t}\right)
-$$
-
-To get the CP measured from the **nose tip**, add the distance from the nose tip to the fin root leading edge ($X_{fLE}$):
-
-$$
-X_{CP,\text{fins}} = X_{fLE} + X_f
-$$
-
----
-
-## Full Rocket Stability Calculator
-
-Use the controls below to define your full rocket geometry and compute the stability margin.
-
-### Rocket Parameters
-
-```{ojs}
-//| echo: false
-//| panel: input
-viewof body_diameter = Inputs.range([1, 20], {value: 4, step: 0.1, label: "Body Diameter (d) [cm]"})
-viewof body_length = Inputs.range([10, 150], {value: 60, step: 1, label: "Body Length [cm]"})
-viewof nose_length = Inputs.range([2, 40], {value: 12, step: 0.5, label: "Nose Cone Length (Ln) [cm]"})
-viewof nose_type = Inputs.select(["Conical", "Ogive"], {value: "Ogive", label: "Nose Cone Type"})
-viewof n_fins = Inputs.select([3, 4], {value: 4, label: "Number of Fins (N)"})
-viewof fin_position = Inputs.range([10, 150], {value: 50, step: 0.5, label: "Nose Tip to Fin LE (X_fLE) [cm]"})
-viewof cg_position = Inputs.range([5, 100], {value: 30, step: 0.5, label: "CG Position from Nose Tip [cm]"})
-```
-
-### Computed Results
-
-```{ojs}
-//| echo: false
-
-// --- Nose Cone ---
-CNa_nose = 2  // Barrowman: always 2 for any nose shape
-Xcp_nose = nose_type === "Conical" ? 0.666 * nose_length : 0.466 * nose_length
-
-// --- Fins ---
-R_body = body_diameter / 2
-Kfb = 1 + R_body / (span + R_body)
-
-// Mid-chord line length
-mid_chord_offset2 = sweep + tip_chord / 2 - root_chord / 2
-l_mc2 = Math.sqrt(span * span + mid_chord_offset2 * mid_chord_offset2)
-
-// CNα for the fin set (uncorrected)
-CNa_fins_raw = (4 * n_fins * Math.pow(span / body_diameter, 2)) /
-  (1 + Math.sqrt(1 + Math.pow(2 * l_mc2 / (root_chord + tip_chord), 2)))
-
-// CNα for the fin set (corrected with interference factor)
-CNa_fins = CNa_fins_raw * Kfb
-
-// Fin CP from nose tip
-Xcp_fins = fin_position + Xf
-
-// --- Total Rocket ---
-CNa_total = CNa_nose + CNa_fins
-Xcp_total = (CNa_nose * Xcp_nose + CNa_fins * Xcp_fins) / CNa_total
-
-// --- Stability ---
-stability_margin = (Xcp_total - cg_position) / body_diameter
-
-stability_status = stability_margin >= 1.0 ? "✅ Stable" :
-                   stability_margin >= 0.5 ? "⚠️ Marginally Stable" :
-                   "❌ Unstable"
-
-stability_color = stability_margin >= 1.0 ? "#22c55e" :
-                  stability_margin >= 0.5 ? "#eab308" :
-                  "#ef4444"
-```
-
-```{ojs}
-//| echo: false
-html`
-<div style="
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin: 1rem 0;
-">
-  <div style="background: #f1f5f9; border-radius: 8px; padding: 1rem;">
-    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Nose Cone</h4>
-    <p style="margin: 0.25rem 0;">C<sub>Nα</sub> = ${CNa_nose.toFixed(2)}</p>
-    <p style="margin: 0.25rem 0;">X<sub>CP</sub> = ${Xcp_nose.toFixed(2)} cm</p>
-  </div>
-  <div style="background: #f1f5f9; border-radius: 8px; padding: 1rem;">
-    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Fin Set (${n_fins} fins)</h4>
-    <p style="margin: 0.25rem 0;">C<sub>Nα</sub> = ${CNa_fins.toFixed(2)} <span style="color:#888">(K<sub>fb</sub> = ${Kfb.toFixed(3)})</span></p>
-    <p style="margin: 0.25rem 0;">X<sub>CP,fins</sub> = ${Xcp_fins.toFixed(2)} cm</p>
-    <p style="margin: 0.25rem 0;">Area = ${fin_area.toFixed(1)} cm² &nbsp; λ = ${taper_ratio.toFixed(2)}</p>
-  </div>
-</div>
-
-<div style="
-  background: ${stability_color}15;
-  border: 2px solid ${stability_color};
-  border-radius: 10px;
-  padding: 1rem 1.5rem;
-  margin: 1rem 0;
-  text-align: center;
-">
-  <h3 style="margin: 0; color: ${stability_color}; font-size: 1.4rem;">
-    ${stability_status}
-  </h3>
-  <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem;">
-    Stability Margin: <strong>${stability_margin.toFixed(2)} calibers</strong>
-  </p>
-  <p style="margin: 0.25rem 0 0 0; color: #555;">
-    Total C<sub>Nα</sub> = ${CNa_total.toFixed(2)} &nbsp;|&nbsp;
-    Total X<sub>CP</sub> = ${Xcp_total.toFixed(2)} cm from nose tip
-  </p>
-</div>
-`
-```
-
-### Rocket Side-View Schematic
-
-The diagram below shows a simplified side view of the rocket. The **blue triangle** marks the Center of Gravity, the **red triangle** marks the total Center of Pressure, and the bracket between them represents the stability margin.
-
-```{ojs}
-//| echo: false
-{
-  const total_length = nose_length + body_length;
-  const rocketY = 50; // vertical center
-  const scaleX = 600 / total_length; // fit within 600px width
-  const halfBody = (body_diameter / 2) * scaleX * 0.6; // visual half-height
-
-  const cgX = cg_position * scaleX;
-  const cpX = Xcp_total * scaleX;
-  const noseEnd = nose_length * scaleX;
-  const finStart = fin_position * scaleX;
-
-  // Fin visual params
-  const finH = span * scaleX * 0.4;
-  const finRootLen = root_chord * scaleX * 0.5;
-  const finTipLen = tip_chord * scaleX * 0.5;
-  const finSweepLen = sweep * scaleX * 0.5;
+  const W = 700;
+  const cellW = W / 5;
+  const H = 180;
+  const pad = 12;
+  const scale = Math.min((cellW - 2 * pad) / cr, (H - 50) / s) * 0.85;
 
   const svg = d3.create("svg")
-    .attr("viewBox", `0 0 650 120`)
+    .attr("viewBox", `0 0 ${W} ${H + 10}`)
     .attr("width", "100%")
-    .attr("height", 120)
-    .style("max-width", "700px");
+    .style("max-width", `${W}px`)
+    .style("font-family", "'Inter', 'Segoe UI', system-ui, sans-serif");
 
-  // Nose cone
-  svg.append("polygon")
-    .attr("points", `0,${rocketY} ${noseEnd},${rocketY - halfBody} ${noseEnd},${rocketY + halfBody}`)
-    .attr("fill", "#94a3b8")
-    .attr("stroke", "#334155")
-    .attr("stroke-width", 1.5);
+  const fins = [
+    {
+      label: "Rectangular",
+      points: [[0,0],[0,s],[cr,s],[cr,0]],
+      color: "#3b82f6"
+    },
+    {
+      label: "Delta",
+      points: [[0,0],[sweep_delta, s],[cr,0]],
+      color: "#8b5cf6"
+    },
+    {
+      label: "Clipped Delta",
+      points: [[0,0],[sweep_clipped, s],[sweep_clipped + ct_clipped, s],[cr,0]],
+      color: "#06b6d4"
+    },
+    {
+      label: "Trapezoidal",
+      points: [[0,0],[cr*0.3, s],[cr*0.3 + cr*0.5, s],[cr,0]],
+      color: "#f59e0b"
+    },
+    {
+      label: "Elliptical",
+      points: null, // handled separately
+      color: "#ef4444"
+    }
+  ];
 
-  // Body tube
-  svg.append("rect")
-    .attr("x", noseEnd)
-    .attr("y", rocketY - halfBody)
-    .attr("width", total_length * scaleX - noseEnd)
-    .attr("height", halfBody * 2)
-    .attr("fill", "#cbd5e1")
-    .attr("stroke", "#334155")
-    .attr("stroke-width", 1.5);
+  fins.forEach((fin, i) => {
+    const g = svg.append("g")
+      .attr("transform", `translate(${i * cellW + cellW/2}, ${H - 15})`);
 
-  // Fins (top and bottom)
-  for (const sign of [-1, 1]) {
-    const baseY = rocketY + sign * halfBody;
-    const tipY = baseY + sign * finH;
-    svg.append("polygon")
-      .attr("points", [
-        `${finStart},${baseY}`,
-        `${finStart + finSweepLen},${tipY}`,
-        `${finStart + finSweepLen + finTipLen},${tipY}`,
-        `${finStart + finRootLen},${baseY}`
-      ].join(" "))
-      .attr("fill", "steelblue")
-      .attr("fill-opacity", 0.5)
-      .attr("stroke", "steelblue")
-      .attr("stroke-width", 1.5);
-  }
+    if (fin.points) {
+      // Polygon fins
+      const pts = fin.points.map(([x,y]) =>
+        `${(x - cr/2) * scale},${-y * scale}`
+      ).join(" ");
 
-  // CG marker (blue downward triangle)
-  const triSize = 8;
-  svg.append("polygon")
-    .attr("points", `${cgX - triSize},${rocketY - halfBody - 14} ${cgX + triSize},${rocketY - halfBody - 14} ${cgX},${rocketY - halfBody - 2}`)
-    .attr("fill", "#3b82f6");
-  svg.append("text")
-    .attr("x", cgX).attr("y", rocketY - halfBody - 18)
-    .attr("text-anchor", "middle").attr("fill", "#3b82f6").attr("font-size", 11).attr("font-weight", "bold")
-    .text("CG");
+      g.append("polygon")
+        .attr("points", pts)
+        .attr("fill", fin.color)
+        .attr("fill-opacity", 0.3)
+        .attr("stroke", fin.color)
+        .attr("stroke-width", 2);
+    } else {
+      // Elliptical fin
+      const nPts = 60;
+      const ellPts = [];
+      for (let j = 0; j <= nPts; j++) {
+        const y = (j / nPts) * s;
+        const chord = cr * Math.sqrt(1 - (y/s)*(y/s));
+        ellPts.push([(chord/2) * scale, -y * scale]);   // right edge
+      }
+      // Mirror for full shape
+      const fullPts = [];
+      for (let j = 0; j < ellPts.length; j++) {
+        fullPts.push(ellPts[j]);
+      }
+      for (let j = ellPts.length - 1; j >= 0; j--) {
+        fullPts.push([-ellPts[j][0], ellPts[j][1]]);
+      }
+      const pathD = "M " + fullPts.map(p => p.join(",")).join(" L ") + " Z";
 
-  // CP marker (red upward triangle)
-  svg.append("polygon")
-    .attr("points", `${cpX - triSize},${rocketY + halfBody + 14} ${cpX + triSize},${rocketY + halfBody + 14} ${cpX},${rocketY + halfBody + 2}`)
-    .attr("fill", "#ef4444");
-  svg.append("text")
-    .attr("x", cpX).attr("y", rocketY + halfBody + 28)
-    .attr("text-anchor", "middle").attr("fill", "#ef4444").attr("font-size", 11).attr("font-weight", "bold")
-    .text("CP");
+      g.append("path")
+        .attr("d", pathD)
+        .attr("fill", fin.color)
+        .attr("fill-opacity", 0.3)
+        .attr("stroke", fin.color)
+        .attr("stroke-width", 2);
+    }
 
-  // Stability margin bracket
-  if (Math.abs(cpX - cgX) > 5) {
-    const bracketY = rocketY + halfBody + 38;
-    svg.append("line")
-      .attr("x1", cgX).attr("y1", bracketY)
-      .attr("x2", cpX).attr("y2", bracketY)
-      .attr("stroke", stability_color).attr("stroke-width", 2);
-    svg.append("line")
-      .attr("x1", cgX).attr("y1", bracketY - 4)
-      .attr("x2", cgX).attr("y2", bracketY + 4)
-      .attr("stroke", stability_color).attr("stroke-width", 2);
-    svg.append("line")
-      .attr("x1", cpX).attr("y1", bracketY - 4)
-      .attr("x2", cpX).attr("y2", bracketY + 4)
-      .attr("stroke", stability_color).attr("stroke-width", 2);
-    svg.append("text")
-      .attr("x", (cgX + cpX) / 2).attr("y", bracketY + 14)
-      .attr("text-anchor", "middle").attr("fill", stability_color).attr("font-size", 10).attr("font-weight", "bold")
-      .text(`${stability_margin.toFixed(2)} cal`);
-  }
+    // Body tube line (root)
+    g.append("line")
+      .attr("x1", -cr/2 * scale - 5).attr("y1", 0)
+      .attr("x2", cr/2 * scale + 5).attr("y2", 0)
+      .attr("stroke", "#64748b")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-dasharray", "4,3");
+
+    // Label
+    g.append("text")
+      .attr("x", 0).attr("y", 16)
+      .attr("text-anchor", "middle")
+      .attr("fill", fin.color)
+      .attr("font-size", 11)
+      .attr("font-weight", "600")
+      .text(fin.label);
+  });
 
   return svg.node();
 }
 ```
 
+::: {.callout-note}
+The dashed line represents the **body tube surface** (fin root). All fins share the same root chord and span for direct comparison.
+:::
+
 ---
 
-## Summary of Barrowman Equations
+## Design Trade-offs
 
-For reference, the complete set of equations used on this page:
+Choosing a fin geometry is a multi-objective design decision. The table below summarizes the key engineering trade-offs:
 
-| Component | $C_{N\alpha}$ | Center of Pressure |
-|:----------|:------------:|:-------------------|
-| **Nose (any shape)** | $2$ | Conical: $X_N = 0.666\,L_N$ &nbsp;&nbsp; Ogive: $X_N = 0.466\,L_N$ |
-| **Fin set** ($N$ fins) | $\dfrac{4N(s/d)^2}{1 + \sqrt{1 + (2\ell_{mc}/(C_r+C_t))^2}} \cdot K_{fb}$ | $X_{fLE} + \dfrac{\ell_m(C_r+2C_t)}{3(C_r+C_t)} + \dfrac{1}{6}\!\left(C_r+C_t-\dfrac{C_rC_t}{C_r+C_t}\right)$ |
+| Criterion | Rectangular | Delta | Clipped Delta | Trapezoidal | Elliptical |
+|:----------|:----------:|:-----:|:------------:|:-----------:|:----------:|
+| **Induced Drag** | High | Medium | Medium | Medium | **Lowest** |
+| **Structural Stiffness** | Low | **Highest** | High | Medium | Medium |
+| **Flutter Resistance** | Poor | **Best** | Good | Medium | Medium |
+| **Ease of Manufacture** | **Easiest** | Easy | Easy | Easy | Difficult |
+| **Weight** | Heaviest | Light | Medium | Medium | Light |
+| **CP Predictability** | Exact | Exact | Exact | Exact | Good |
 
-**Total rocket:**
+::: {.callout-tip}
+## Rule of Thumb
+For a first rocket, **clipped delta** or **trapezoidal** fins offer the best compromise. For competition rockets optimizing drag, **elliptical** fins are theoretically optimal (analogous to elliptical wing loading in aircraft — cf. the Supermarine Spitfire). **Delta** fins excel when flutter resistance at high Mach is critical.
+:::
+
+---
+
+## Barrowman Framework Overview
+
+Regardless of fin shape, the Barrowman method computes two quantities for each rocket component:
+
+1. **Normal force coefficient derivative** $C_{N\alpha}$ — how much restoring force the component generates per radian of angle of attack
+2. **Center of pressure position** $X_{CP}$ — where that force effectively acts
+
+The total rocket CP is the $C_{N\alpha}$-weighted average of all component CPs:
 
 $$
-C_{N\alpha,\text{total}} = \sum_i C_{N\alpha,i}
-\qquad\qquad
-X_{CP,\text{total}} = \frac{\displaystyle\sum_i C_{N\alpha,i}\,X_{CP,i}}{C_{N\alpha,\text{total}}}
+X_{CP,\text{total}} = \frac{\displaystyle\sum_i C_{N\alpha,i}\,X_{CP,i}}{\displaystyle\sum_i C_{N\alpha,i}}
 $$
+
+The specific formulas for $C_{N\alpha}$ and $X_{CP}$ depend on the fin geometry. The following chapters derive them for:
+
+- [**Trapezoidal fins**](trapezoidal-fins.qmd) — the general case covering rectangular, delta, and clipped-delta planforms
+- [**Elliptical fins**](elliptical-fins.qmd) — requiring dedicated integral derivations
 
 ---
 
@@ -418,4 +226,5 @@ The Barrowman method is valid under the following assumptions:
 - Barrowman, J.S. & Barrowman, J.A., *"The Theoretical Prediction of the Center of Pressure"*, 1966 — the original paper.
 - [Nakka Rocketry — Barrowman Equations](https://www.nakka-rocketry.net/cp.html) — excellent reference with worked examples.
 - [RocketMime — Stability Calculator](https://www.rocketmime.com/rockets/barrowman.html) — another clear derivation.
+- [RocketPy — Elliptical Fins Equations](https://docs.rocketpy.org/en/latest/technical/aerodynamics/elliptical_fins.html) — derivations for elliptical planforms.
 :::
