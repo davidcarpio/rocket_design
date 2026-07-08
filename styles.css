@@ -1,0 +1,15 @@
+/* Custom styles for the CLES-FACIL Rocket Design manual */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  color: #2c3e50;
+}
+
+/* Make OJS inputs look a bit nicer */
+.oi-range {
+  max-width: 400px;
+  margin-bottom: 1rem;
+}

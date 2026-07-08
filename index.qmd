@@ -1,0 +1,21 @@
+# Preface {.unnumbered}
+
+Welcome to the **CLES-FACIL Rocket Design** technical manual. 
+
+This repository serves as an interactive reference and tutorial guide for rocket design, created for members of the CLES-FACIL association (cles-facil.org). 
+
+## About This Manual
+
+Our goal is to provide clear, interactive, and highly visual explanations of complex rocketry concepts, inspired by modern interactive textbooks. Whether you are a beginner looking to understand the basics of aerodynamics, or an advanced member working on structural optimization, you will find useful resources here.
+
+## Contents
+
+Currently, this manual covers:
+
+* **[Fin Design](fin-design.qmd)**: Understand the impact of fin geometry on stability and aerodynamics through interactive sliders and visualizations.
+
+*More chapters on propulsion, recovery systems, and structures will be added soon.*
+
+## Contributing
+
+This manual is open-source. If you wish to contribute, please check our GitHub repository. We use Quarto for rendering these pages, allowing you to easily embed text, equations, and interactive Observable JS code blocks.

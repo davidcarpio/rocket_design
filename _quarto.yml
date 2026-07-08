@@ -1,0 +1,24 @@
+project:
+  type: book
+
+book:
+  title: "CLES-FACIL Rocket Design"
+  author: "CLES-FACIL Association"
+  date: last-modified
+  chapters:
+    - index.qmd
+    - fin-design.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    css: styles.css
+    code-fold: true
+    execute:
+      echo: false
+      warning: false
+
+execute:
+  freeze: auto

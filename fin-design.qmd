@@ -1,0 +1,67 @@
+# Fin Design
+
+## Interactive Fin Geometry
+
+Adjust the parameters below to see how they affect the geometry and the aerodynamic properties of a standard trapezoidal fin used in model rocketry.
+
+```{ojs}
+//| panel: input
+viewof root_chord = Inputs.range([1, 20], {value: 10, step: 0.1, label: "Root Chord (Cr) [cm]"})
+viewof tip_chord = Inputs.range([0, 20], {value: 5, step: 0.1, label: "Tip Chord (Ct) [cm]"})
+viewof span = Inputs.range([1, 20], {value: 8, step: 0.1, label: "Span (S) [cm]"})
+viewof sweep = Inputs.range([0, 20], {value: 4, step: 0.1, label: "Sweep Length (Xr) [cm]"})
+```
+
+## Fin Characteristics
+
+Based on the Barrowman equations for a single fin, the aerodynamic properties are calculated dynamically below:
+
+```{ojs}
+//| echo: false
+// Fin Area (Trapezoid)
+area = (root_chord + tip_chord) / 2 * span
+
+// Center of Pressure distance from the root leading edge (simplified for trapezoidal fins)
+Xf = (sweep / 3) * (root_chord + 2 * tip_chord) / (root_chord + tip_chord) + (1 / 6) * ((root_chord**2 + root_chord * tip_chord + tip_chord**2) / (root_chord + tip_chord))
+```
+
+**Calculated Results:**
+
+* **Fin Area:** ${area.toFixed(2)} cm²
+* **Center of Pressure (Xf):** ${Xf.toFixed(2)} cm from the fin root leading edge
+
+## Fin Shape Visualization
+
+Below is a generated 2D preview of the fin. The red dot represents the approximate geometric Center of Pressure for this single fin.
+
+```{ojs}
+//| echo: false
+Plot.plot({
+  aspectRatio: 1,
+  x: {label: "Length [cm]", domain: [0, Math.max(root_chord, tip_chord + sweep) + 2]},
+  y: {label: "Span [cm]", domain: [0, span + 2]},
+  marks: [
+    Plot.line(
+      [
+        {x: 0, y: 0},
+        {x: sweep, y: span},
+        {x: sweep + tip_chord, y: span},
+        {x: root_chord, y: 0},
+        {x: 0, y: 0} // Close the shape
+      ], 
+      {x: "x", y: "y", fill: "steelblue", fillOpacity: 0.5, stroke: "black", strokeWidth: 2}
+    ),
+    Plot.dot([{x: Xf, y: span/3}], {fill: "red", r: 5, title: "Center of Pressure"}),
+    Plot.text([{x: Xf, y: span/3 - 1}], {text: d => "CP", fill: "red", fontWeight: "bold"})
+  ]
+})
+```
+
+### Understanding the Parameters
+
+- **Root Chord (Cr):** The length of the fin where it attaches to the body tube.
+- **Tip Chord (Ct):** The length of the fin at its outermost edge.
+- **Span (S):** The radial distance from the root to the tip (how far it sticks out from the rocket body).
+- **Sweep (Xr):** The longitudinal distance the tip is set back from the root leading edge.
+
+By tuning these parameters, we change both the aerodynamic drag and the position of the center of pressure. Shifting the Center of Pressure rearward generally increases the rocket's static stability margin.
