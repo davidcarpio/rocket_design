@@ -1,0 +1,72 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "CLES-FACIL Rocket Design",
+    "section": "",
+    "text": "Preface\nWelcome to the CLES-FACIL Rocket Design technical manual.\nThis repository serves as an interactive reference and tutorial guide for rocket design, created for members of the CLES-FACIL association (cles-facil.org).",
+    "crumbs": [
+      "Preface"
+    ]
+  },
+  {
+    "objectID": "index.html#about-this-manual",
+    "href": "index.html#about-this-manual",
+    "title": "CLES-FACIL Rocket Design",
+    "section": "About This Manual",
+    "text": "About This Manual\nOur goal is to provide clear, interactive, and highly visual explanations of complex rocketry concepts, inspired by modern interactive textbooks. Whether you are a beginner looking to understand the basics of aerodynamics, or an advanced member working on structural optimization, you will find useful resources here.",
+    "crumbs": [
+      "Preface"
+    ]
+  },
+  {
+    "objectID": "index.html#contents",
+    "href": "index.html#contents",
+    "title": "CLES-FACIL Rocket Design",
+    "section": "Contents",
+    "text": "Contents\nCurrently, this manual covers:\n\nFin Design: Understand the impact of fin geometry on stability and aerodynamics through interactive sliders and visualizations.\n\nMore chapters on propulsion, recovery systems, and structures will be added soon.",
+    "crumbs": [
+      "Preface"
+    ]
+  },
+  {
+    "objectID": "index.html#contributing",
+    "href": "index.html#contributing",
+    "title": "CLES-FACIL Rocket Design",
+    "section": "Contributing",
+    "text": "Contributing\nThis manual is open-source. If you wish to contribute, please check our GitHub repository. We use Quarto for rendering these pages, allowing you to easily embed text, equations, and interactive Observable JS code blocks.",
+    "crumbs": [
+      "Preface"
+    ]
+  },
+  {
+    "objectID": "fin-design.html",
+    "href": "fin-design.html",
+    "title": "1  Fin Design",
+    "section": "",
+    "text": "1.1 Interactive Fin Geometry\nAdjust the parameters below to see how they affect the geometry and the aerodynamic properties of a standard trapezoidal fin used in model rocketry.\nCode\nviewof root_chord = Inputs.range([1, 20], {value: 10, step: 0.1, label: \"Root Chord (Cr) [cm]\"})\nviewof tip_chord = Inputs.range([0, 20], {value: 5, step: 0.1, label: \"Tip Chord (Ct) [cm]\"})\nviewof span = Inputs.range([1, 20], {value: 8, step: 0.1, label: \"Span (S) [cm]\"})\nviewof sweep = Inputs.range([0, 20], {value: 4, step: 0.1, label: \"Sweep Length (Xr) [cm]\"})",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Fin Design</span>"
+    ]
+  },
+  {
+    "objectID": "fin-design.html#fin-characteristics",
+    "href": "fin-design.html#fin-characteristics",
+    "title": "1  Fin Design",
+    "section": "1.2 Fin Characteristics",
+    "text": "1.2 Fin Characteristics\nBased on the Barrowman equations for a single fin, the aerodynamic properties are calculated dynamically below:\n\n\nCode\narea = (root_chord + tip_chord) / 2 * span\n\n// Center of Pressure distance from the root leading edge (simplified for trapezoidal fins)\nXf = (sweep / 3) * (root_chord + 2 * tip_chord) / (root_chord + tip_chord) + (1 / 6) * ((root_chord**2 + root_chord * tip_chord + tip_chord**2) / (root_chord + tip_chord))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nCalculated Results:\n\nFin Area:  cm²\nCenter of Pressure (Xf):  cm from the fin root leading edge",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Fin Design</span>"
+    ]
+  },
+  {
+    "objectID": "fin-design.html#fin-shape-visualization",
+    "href": "fin-design.html#fin-shape-visualization",
+    "title": "1  Fin Design",
+    "section": "1.3 Fin Shape Visualization",
+    "text": "1.3 Fin Shape Visualization\nBelow is a generated 2D preview of the fin. The red dot represents the approximate geometric Center of Pressure for this single fin.\n\n\nCode\nPlot.plot({\n  aspectRatio: 1,\n  x: {label: \"Length [cm]\", domain: [0, Math.max(root_chord, tip_chord + sweep) + 2]},\n  y: {label: \"Span [cm]\", domain: [0, span + 2]},\n  marks: [\n    Plot.line(\n      [\n        {x: 0, y: 0},\n        {x: sweep, y: span},\n        {x: sweep + tip_chord, y: span},\n        {x: root_chord, y: 0},\n        {x: 0, y: 0} // Close the shape\n      ], \n      {x: \"x\", y: \"y\", fill: \"steelblue\", fillOpacity: 0.5, stroke: \"black\", strokeWidth: 2}\n    ),\n    Plot.dot([{x: Xf, y: span/3}], {fill: \"red\", r: 5, title: \"Center of Pressure\"}),\n    Plot.text([{x: Xf, y: span/3 - 1}], {text: d =&gt; \"CP\", fill: \"red\", fontWeight: \"bold\"})\n  ]\n})\n\n\n\n\n\n\n\n\n1.3.1 Understanding the Parameters\n\nRoot Chord (Cr): The length of the fin where it attaches to the body tube.\nTip Chord (Ct): The length of the fin at its outermost edge.\nSpan (S): The radial distance from the root to the tip (how far it sticks out from the rocket body).\nSweep (Xr): The longitudinal distance the tip is set back from the root leading edge.\n\nBy tuning these parameters, we change both the aerodynamic drag and the position of the center of pressure. Shifting the Center of Pressure rearward generally increases the rocket’s static stability margin.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Fin Design</span>"
+    ]
+  }
+]
