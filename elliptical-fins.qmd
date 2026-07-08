@@ -1,0 +1,486 @@
+# Elliptical Fins — Theory & Equations
+
+## Introduction
+
+An **elliptical fin** planform produces the theoretically **minimum induced drag** for a given span and lift — the same principle behind the Supermarine Spitfire's famous elliptical wing. In rocketry, elliptical fins are used on competition rockets where drag optimization matters.
+
+Unlike trapezoidal fins, an elliptical fin is defined by only **two parameters**:
+
+- **Root chord** ($C_r$): the chord at the body tube
+- **Span** ($s$): the radial extent of the fin
+
+All other geometric properties are derived from the ellipse equation.
+
+::: {.callout-note}
+The derivations in this chapter follow the [RocketPy elliptical fins documentation](https://docs.rocketpy.org/en/latest/technical/aerodynamics/elliptical_fins.html), based on the Barrowman method.
+:::
+
+---
+
+## Geometry
+
+### Chord Length Distribution
+
+The chord length at any spanwise position $y$ (measured from the body surface) follows the half-ellipse equation:
+
+$$
+c(y) = C_r \sqrt{1 - \left(\frac{y}{s}\right)^2}
+$$
+
+At $y = 0$ (root), the chord is $C_r$. At $y = s$ (tip), the chord vanishes smoothly to zero.
+
+Using the axis $\xi = y + r_t$ measured from the rocket centerline (where $r_t$ is the body radius at the fin position):
+
+$$
+c(\xi) = C_r \sqrt{1 - \left(\frac{\xi - r_t}{s}\right)^2}
+$$
+
+```{ojs}
+//| echo: false
+//| panel: input
+viewof ell_cr = Inputs.range([2, 20], {value: 10, step: 0.5, label: "Root Chord Cr [cm]"})
+viewof ell_span = Inputs.range([2, 15], {value: 8, step: 0.5, label: "Span s [cm]"})
+```
+
+#### Interactive Chord Distribution
+
+```{ojs}
+//| echo: false
+{
+  // Generate chord distribution data
+  const nPts = 100;
+  const data = [];
+  for (let i = 0; i <= nPts; i++) {
+    const y = (i / nPts) * ell_span;
+    const c = ell_cr * Math.sqrt(1 - (y / ell_span) ** 2);
+    data.push({y, c});
+  }
+
+  return Plot.plot({
+    width: 550,
+    height: 300,
+    x: {label: "Spanwise position y [cm]", domain: [0, ell_span * 1.05]},
+    y: {label: "Chord length c(y) [cm]", domain: [0, ell_cr * 1.1]},
+    grid: true,
+    marks: [
+      Plot.areaY(data, {x: "y", y: "c", fill: "#ef444430"}),
+      Plot.line(data, {x: "y", y: "c", stroke: "#ef4444", strokeWidth: 2.5}),
+      Plot.ruleY([0]),
+      Plot.ruleX([0])
+    ]
+  });
+}
+```
+
+#### Fin Planform Shape
+
+```{ojs}
+//| echo: false
+{
+  const nPts = 80;
+  const outline = [];
+
+  // Leading edge (elliptical curve going outward)
+  for (let i = 0; i <= nPts; i++) {
+    const y = (i / nPts) * ell_span;
+    const c = ell_cr * Math.sqrt(1 - (y / ell_span) ** 2);
+    outline.push({x: -c / 2, y: y});
+  }
+  // Trailing edge (return along other side)
+  for (let i = nPts; i >= 0; i--) {
+    const y = (i / nPts) * ell_span;
+    const c = ell_cr * Math.sqrt(1 - (y / ell_span) ** 2);
+    outline.push({x: c / 2, y: y});
+  }
+  // Close
+  outline.push(outline[0]);
+
+  // CP position (0.288 * Cr from LE, at Y_ma)
+  const ell_area = Math.PI * ell_cr * ell_span / 4;
+  // MAC integral result
+  const c_ma = (8 * ell_cr) / (3 * Math.PI);
+  // Y_ma from c(Y_ma) = c_ma
+  const Y_ma = ell_span * Math.sqrt(1 - (c_ma / ell_cr) ** 2);
+  const Xcp_ell = 0.288 * ell_cr;
+
+  return Plot.plot({
+    aspectRatio: 1,
+    width: 400,
+    x: {label: "Chord [cm]", domain: [-ell_cr * 0.7, ell_cr * 0.7]},
+    y: {label: "Span [cm]", domain: [-0.5, ell_span * 1.1]},
+    marks: [
+      Plot.line(outline, {x: "x", y: "y", fill: "#ef4444", fillOpacity: 0.25, stroke: "#ef4444", strokeWidth: 2}),
+      // Body tube line
+      Plot.ruleY([0], {stroke: "#64748b", strokeWidth: 1.5, strokeDasharray: "4,3"}),
+      // MAC line
+      Plot.ruleY([Y_ma], {stroke: "#f59e0b", strokeWidth: 1, strokeDasharray: "6,3",
+        x1: -ell_cr * 0.6, x2: ell_cr * 0.6}),
+      Plot.text([{x: ell_cr * 0.55, y: Y_ma + 0.3}], {text: d => "Y_MA", fill: "#f59e0b", fontSize: 10, fontWeight: "bold"}),
+      // CP dot
+      Plot.dot([{x: 0, y: Y_ma}], {fill: "red", r: 6}),
+      Plot.text([{x: 0.8, y: Y_ma}], {text: d => "CP", fill: "red", fontWeight: "bold", fontSize: 12})
+    ]
+  });
+}
+```
+
+---
+
+### Fin Area
+
+The area of an elliptical fin is the area of a quarter-ellipse:
+
+$$
+A_f = \frac{\pi \, C_r \, s}{4}
+$$
+
+### Mean Aerodynamic Chord ($c_{MA}$)
+
+The mean aerodynamic chord is defined as:
+
+$$
+c_{MA} = \frac{1}{A_f} \int_0^s c(y)^2 \, dy
+$$
+
+Substituting the elliptical chord distribution and solving:
+
+$$
+c_{MA} = \frac{8\,C_r}{3\pi}
+$$
+
+### Spanwise Position of the MAC ($Y_{MA}$)
+
+The spanwise location where the MAC sits is found by solving $c(Y_{MA}) = c_{MA}$:
+
+$$
+Y_{MA} = s\,\sqrt{1 - \left(\frac{8}{3\pi}\right)^2} \approx 0.5394\,s
+$$
+
+```{ojs}
+//| echo: false
+{
+  const area = Math.PI * ell_cr * ell_span / 4;
+  const mac = (8 * ell_cr) / (3 * Math.PI);
+  const y_ma = ell_span * Math.sqrt(1 - (8 / (3 * Math.PI)) ** 2);
+
+  return html`
+  <div style="
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  ">
+    <div style="background: #fef2f2; border-radius: 8px; padding: 1rem; border-left: 3px solid #ef4444;">
+      <h4 style="margin: 0 0 0.3rem 0; color: #991b1b;">Fin Area</h4>
+      <p style="margin: 0; font-size: 1.2rem; font-weight: 600;">${area.toFixed(2)} cm²</p>
+    </div>
+    <div style="background: #fef2f2; border-radius: 8px; padding: 1rem; border-left: 3px solid #ef4444;">
+      <h4 style="margin: 0 0 0.3rem 0; color: #991b1b;">MAC Length</h4>
+      <p style="margin: 0; font-size: 1.2rem; font-weight: 600;">${mac.toFixed(2)} cm</p>
+    </div>
+    <div style="background: #fef2f2; border-radius: 8px; padding: 1rem; border-left: 3px solid #ef4444;">
+      <h4 style="margin: 0 0 0.3rem 0; color: #991b1b;">Y<sub>MA</sub></h4>
+      <p style="margin: 0; font-size: 1.2rem; font-weight: 600;">${y_ma.toFixed(2)} cm</p>
+    </div>
+  </div>
+  `;
+}
+```
+
+---
+
+## Center of Pressure
+
+For an elliptical fin, the center of pressure along the rocket centerline is located at a fixed fraction of the root chord, per the *Model Rocket Technical Report*:
+
+$$
+X_{CP} = 0.288 \, C_r
+$$
+
+measured aft from the fin root leading edge. From the nose tip:
+
+$$
+X_{CP,\text{fins}} = X_{fLE} + 0.288\,C_r
+$$
+
+::: {.callout-tip}
+This is notably simpler than the trapezoidal formula — the elliptical shape's symmetry yields a clean constant.
+:::
+
+---
+
+## Normal Force Coefficient Derivative
+
+For elliptical fins, the Barrowman $C_{N\alpha}$ formula adapts by treating the effective geometry. Since the "tip chord" is zero and the planform tapers smoothly, the mid-chord line concept is replaced by an equivalent approach.
+
+The effective calculation uses the same Barrowman framework with $C_t = 0$ and an effective sweep derived from the ellipse geometry:
+
+$$
+(C_{N\alpha})_F = \frac{4\,N\,(s/d)^2}{1 + \sqrt{1 + \left(\dfrac{2\,s}{C_r}\right)^2}}
+$$
+
+With the fin-body interference factor:
+
+$$
+K_{fb} = 1 + \frac{R}{s + R}
+$$
+
+$$
+(C_{N\alpha})_F^{\text{corrected}} = (C_{N\alpha})_F \cdot K_{fb}
+$$
+
+---
+
+## Roll Damping Interference Factor
+
+The roll damping interference factor for elliptical fins requires evaluating integrals over the elliptical chord distribution. The result is **piecewise**, depending on the ratio of span to body radius.
+
+Let $r = d/2$ be the body radius. According to Barrowman (via RocketPy):
+
+**When $s > r$:**
+
+The interference factor involves both the body-immersed and free-stream portions of the fin, yielding a closed-form expression with inverse trigonometric terms.
+
+**When $s < r$:**
+
+The fin is "short" relative to the body. The expressions simplify but remain dependent on the $s/r$ ratio.
+
+**When $s = r$:**
+
+The limiting case where both expressions converge.
+
+::: {.callout-note}
+The full piecewise expressions are lengthy and best implemented computationally. They are documented in the [RocketPy source code](https://docs.rocketpy.org/en/latest/technical/aerodynamics/elliptical_fins.html#roll-damping-interference-factor). Roll moment calculations using these factors will be covered in a dedicated **Roll Dynamics** chapter.
+:::
+
+---
+
+## Full Rocket Stability Calculator (Elliptical Fins)
+
+```{ojs}
+//| echo: false
+//| panel: input
+viewof ell_body_diameter = Inputs.range([1, 20], {value: 4, step: 0.1, label: "Body Diameter (d) [cm]"})
+viewof ell_body_length = Inputs.range([10, 150], {value: 60, step: 1, label: "Body Length [cm]"})
+viewof ell_nose_length = Inputs.range([2, 40], {value: 12, step: 0.5, label: "Nose Cone Length (Ln) [cm]"})
+viewof ell_nose_type = Inputs.select(["Conical", "Ogive"], {value: "Ogive", label: "Nose Cone Type"})
+viewof ell_n_fins = Inputs.select([3, 4], {value: 4, label: "Number of Fins (N)"})
+viewof ell_fin_position = Inputs.range([10, 150], {value: 50, step: 0.5, label: "Nose Tip to Fin LE (X_fLE) [cm]"})
+viewof ell_cg_position = Inputs.range([5, 100], {value: 30, step: 0.5, label: "CG Position from Nose Tip [cm]"})
+```
+
+```{ojs}
+//| echo: false
+
+// --- Nose Cone ---
+ell_CNa_nose = 2
+ell_Xcp_nose = ell_nose_type === "Conical" ? 0.666 * ell_nose_length : 0.466 * ell_nose_length
+
+// --- Elliptical Fins ---
+ell_R_body = ell_body_diameter / 2
+ell_Kfb = 1 + ell_R_body / (ell_span + ell_R_body)
+
+// CNα for elliptical fin set
+ell_CNa_fins_raw = (4 * ell_n_fins * Math.pow(ell_span / ell_body_diameter, 2)) /
+  (1 + Math.sqrt(1 + Math.pow(2 * ell_span / ell_cr, 2)))
+
+ell_CNa_fins = ell_CNa_fins_raw * ell_Kfb
+
+// Fin CP from nose tip (elliptical: 0.288 * Cr)
+ell_Xf = 0.288 * ell_cr
+ell_Xcp_fins = ell_fin_position + ell_Xf
+
+// --- Total Rocket ---
+ell_CNa_total = ell_CNa_nose + ell_CNa_fins
+ell_Xcp_total = (ell_CNa_nose * ell_Xcp_nose + ell_CNa_fins * ell_Xcp_fins) / ell_CNa_total
+
+// --- Stability ---
+ell_stability_margin = (ell_Xcp_total - ell_cg_position) / ell_body_diameter
+
+ell_stability_status = ell_stability_margin >= 1.0 ? "✅ Stable" :
+                       ell_stability_margin >= 0.5 ? "⚠️ Marginally Stable" :
+                       "❌ Unstable"
+
+ell_stability_color = ell_stability_margin >= 1.0 ? "#22c55e" :
+                      ell_stability_margin >= 0.5 ? "#eab308" :
+                      "#ef4444"
+
+// Elliptical fin area
+ell_fin_area = Math.PI * ell_cr * ell_span / 4
+```
+
+```{ojs}
+//| echo: false
+html`
+<div style="
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+">
+  <div style="background: #f1f5f9; border-radius: 8px; padding: 1rem;">
+    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Nose Cone</h4>
+    <p style="margin: 0.25rem 0;">C<sub>Nα</sub> = ${ell_CNa_nose.toFixed(2)}</p>
+    <p style="margin: 0.25rem 0;">X<sub>CP</sub> = ${ell_Xcp_nose.toFixed(2)} cm</p>
+  </div>
+  <div style="background: #f1f5f9; border-radius: 8px; padding: 1rem;">
+    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Elliptical Fin Set (${ell_n_fins} fins)</h4>
+    <p style="margin: 0.25rem 0;">C<sub>Nα</sub> = ${ell_CNa_fins.toFixed(2)} <span style="color:#888">(K<sub>fb</sub> = ${ell_Kfb.toFixed(3)})</span></p>
+    <p style="margin: 0.25rem 0;">X<sub>CP,fins</sub> = ${ell_Xcp_fins.toFixed(2)} cm</p>
+    <p style="margin: 0.25rem 0;">Area = ${ell_fin_area.toFixed(1)} cm²</p>
+  </div>
+</div>
+
+<div style="
+  background: ${ell_stability_color}15;
+  border: 2px solid ${ell_stability_color};
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  text-align: center;
+">
+  <h3 style="margin: 0; color: ${ell_stability_color}; font-size: 1.4rem;">
+    ${ell_stability_status}
+  </h3>
+  <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem;">
+    Stability Margin: <strong>${ell_stability_margin.toFixed(2)} calibers</strong>
+  </p>
+  <p style="margin: 0.25rem 0 0 0; color: #555;">
+    Total C<sub>Nα</sub> = ${ell_CNa_total.toFixed(2)} &nbsp;|&nbsp;
+    Total X<sub>CP</sub> = ${ell_Xcp_total.toFixed(2)} cm from nose tip
+  </p>
+</div>
+`
+```
+
+### Rocket Side-View Schematic
+
+```{ojs}
+//| echo: false
+{
+  const total_length = ell_nose_length + ell_body_length;
+  const rocketY = 50;
+  const scaleX = 600 / total_length;
+  const halfBody = (ell_body_diameter / 2) * scaleX * 0.6;
+
+  const cgX = ell_cg_position * scaleX;
+  const cpX = ell_Xcp_total * scaleX;
+  const noseEnd = ell_nose_length * scaleX;
+  const finStart = ell_fin_position * scaleX;
+
+  const finH = ell_span * scaleX * 0.4;
+  const finRootLen = ell_cr * scaleX * 0.5;
+
+  const svg = d3.create("svg")
+    .attr("viewBox", `0 0 650 120`)
+    .attr("width", "100%")
+    .attr("height", 120)
+    .style("max-width", "700px");
+
+  // Nose cone
+  svg.append("polygon")
+    .attr("points", `0,${rocketY} ${noseEnd},${rocketY - halfBody} ${noseEnd},${rocketY + halfBody}`)
+    .attr("fill", "#94a3b8")
+    .attr("stroke", "#334155")
+    .attr("stroke-width", 1.5);
+
+  // Body tube
+  svg.append("rect")
+    .attr("x", noseEnd)
+    .attr("y", rocketY - halfBody)
+    .attr("width", total_length * scaleX - noseEnd)
+    .attr("height", halfBody * 2)
+    .attr("fill", "#cbd5e1")
+    .attr("stroke", "#334155")
+    .attr("stroke-width", 1.5);
+
+  // Elliptical fins (top and bottom)
+  for (const sign of [-1, 1]) {
+    const baseY = rocketY + sign * halfBody;
+    const nPts = 40;
+    let pathD = `M ${finStart},${baseY}`;
+    // Draw the elliptical curve outward
+    for (let i = 0; i <= nPts; i++) {
+      const t = i / nPts;
+      const y_local = t * finH;
+      const chord = finRootLen * Math.sqrt(1 - t * t);
+      // Center the chord at finStart + finRootLen/2
+      const cx = finStart + finRootLen / 2;
+      const px = cx - chord / 2;
+      pathD += ` L ${px},${baseY + sign * y_local}`;
+    }
+    // Return along the other edge
+    for (let i = nPts; i >= 0; i--) {
+      const t = i / nPts;
+      const y_local = t * finH;
+      const chord = finRootLen * Math.sqrt(1 - t * t);
+      const cx = finStart + finRootLen / 2;
+      const px = cx + chord / 2;
+      pathD += ` L ${px},${baseY + sign * y_local}`;
+    }
+    pathD += " Z";
+
+    svg.append("path")
+      .attr("d", pathD)
+      .attr("fill", "#ef4444")
+      .attr("fill-opacity", 0.4)
+      .attr("stroke", "#ef4444")
+      .attr("stroke-width", 1.5);
+  }
+
+  // CG marker
+  const triSize = 8;
+  svg.append("polygon")
+    .attr("points", `${cgX - triSize},${rocketY - halfBody - 14} ${cgX + triSize},${rocketY - halfBody - 14} ${cgX},${rocketY - halfBody - 2}`)
+    .attr("fill", "#3b82f6");
+  svg.append("text")
+    .attr("x", cgX).attr("y", rocketY - halfBody - 18)
+    .attr("text-anchor", "middle").attr("fill", "#3b82f6").attr("font-size", 11).attr("font-weight", "bold")
+    .text("CG");
+
+  // CP marker
+  svg.append("polygon")
+    .attr("points", `${cpX - triSize},${rocketY + halfBody + 14} ${cpX + triSize},${rocketY + halfBody + 14} ${cpX},${rocketY + halfBody + 2}`)
+    .attr("fill", "#ef4444");
+  svg.append("text")
+    .attr("x", cpX).attr("y", rocketY + halfBody + 28)
+    .attr("text-anchor", "middle").attr("fill", "#ef4444").attr("font-size", 11).attr("font-weight", "bold")
+    .text("CP");
+
+  // Stability margin bracket
+  if (Math.abs(cpX - cgX) > 5) {
+    const bracketY = rocketY + halfBody + 38;
+    svg.append("line")
+      .attr("x1", cgX).attr("y1", bracketY)
+      .attr("x2", cpX).attr("y2", bracketY)
+      .attr("stroke", ell_stability_color).attr("stroke-width", 2);
+    svg.append("line")
+      .attr("x1", cgX).attr("y1", bracketY - 4)
+      .attr("x2", cgX).attr("y2", bracketY + 4)
+      .attr("stroke", ell_stability_color).attr("stroke-width", 2);
+    svg.append("line")
+      .attr("x1", cpX).attr("y1", bracketY - 4)
+      .attr("x2", cpX).attr("y2", bracketY + 4)
+      .attr("stroke", ell_stability_color).attr("stroke-width", 2);
+    svg.append("text")
+      .attr("x", (cgX + cpX) / 2).attr("y", bracketY + 14)
+      .attr("text-anchor", "middle").attr("fill", ell_stability_color).attr("font-size", 10).attr("font-weight", "bold")
+      .text(`${ell_stability_margin.toFixed(2)} cal`);
+  }
+
+  return svg.node();
+}
+```
+
+---
+
+## Summary
+
+| Quantity | Formula |
+|:---------|:--------|
+| **Chord distribution** | $c(y) = C_r\sqrt{1 - (y/s)^2}$ |
+| **Fin area** | $A_f = \frac{\pi\,C_r\,s}{4}$ |
+| **Mean aerodynamic chord** | $c_{MA} = \frac{8\,C_r}{3\pi}$ |
+| **MAC spanwise position** | $Y_{MA} \approx 0.5394\,s$ |
+| **Center of pressure** | $X_{CP} = 0.288\,C_r$ from fin LE |
+| **$C_{N\alpha}$** | $\dfrac{4N(s/d)^2}{1 + \sqrt{1 + (2s/C_r)^2}} \cdot K_{fb}$ |
