@@ -8,6 +8,8 @@ book:
   chapters:
     - index.qmd
     - fin-design.qmd
+    - trapezoidal-fins.qmd
+    - elliptical-fins.qmd
 
 format:
   html:
