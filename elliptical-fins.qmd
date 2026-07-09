@@ -155,7 +155,7 @@ $$
 The spanwise location where the MAC sits is found by solving $c(Y_{MA}) = c_{MA}$:
 
 $$
-Y_{MA} = s\,\sqrt{1 - \left(\frac{8}{3\pi}\right)^2} \approx 0.5394\,s
+Y_{MA} = s\,\sqrt{1 - \left(\frac{8}{3\pi}\right)^2} \approx 0.5287\,s
 $$
 
 ```{ojs}
@@ -299,9 +299,9 @@ ell_Xcp_total = (ell_CNa_nose * ell_Xcp_nose + ell_CNa_fins * ell_Xcp_fins) / el
 // --- Stability ---
 ell_stability_margin = (ell_Xcp_total - ell_cg_position) / ell_body_diameter
 
-ell_stability_status = ell_stability_margin >= 1.0 ? "✅ Stable" :
-                       ell_stability_margin >= 0.5 ? "⚠️ Marginally Stable" :
-                       "❌ Unstable"
+ell_stability_status = ell_stability_margin >= 1.0 ? "Stable" :
+                       ell_stability_margin >= 0.5 ? "Marginally Stable" :
+                       "Unstable"
 
 ell_stability_color = ell_stability_margin >= 1.0 ? "#22c55e" :
                       ell_stability_margin >= 0.5 ? "#eab308" :
@@ -483,6 +483,6 @@ html`
 | **Chord distribution** | $c(y) = C_r\sqrt{1 - (y/s)^2}$ |
 | **Fin area** | $A_f = \frac{\pi\,C_r\,s}{4}$ |
 | **Mean aerodynamic chord** | $c_{MA} = \frac{8\,C_r}{3\pi}$ |
-| **MAC spanwise position** | $Y_{MA} \approx 0.5394\,s$ |
+| **MAC spanwise position** | $Y_{MA} \approx 0.5287\,s$ |
 | **Center of pressure** | $X_{CP} = 0.288\,C_r$ from fin LE |
 | **$C_{N\alpha}$** | $\dfrac{4N(s/d)^2}{1 + \sqrt{1 + (2s/C_r)^2}} \cdot K_{fb}$ |
