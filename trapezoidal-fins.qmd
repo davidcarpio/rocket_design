@@ -60,15 +60,15 @@ Yf_cp = (span / 3) * (root_chord + 2 * tip_chord) / (root_chord + tip_chord)
 ```{ojs}
 //| echo: false
 {
-  const margin = 2;
-  const xMax = Math.max(root_chord, sweep + tip_chord) + margin;
-  const yMax = span + margin;
+  // Use fixed domains based on slider maximums (Cr, Ct, sweep max 20, span max 20)
+  const xDomainMax = 42;
+  const yDomainMax = 22;
 
   return Plot.plot({
-    aspectRatio: 1,
     width: 500,
-    x: {label: "Length [cm]", domain: [0, xMax]},
-    y: {label: "Span [cm]", domain: [0, yMax]},
+    height: 500 * (yDomainMax / xDomainMax), // ensures 1:1 physical aspect ratio
+    x: {label: "Length [cm]", domain: [0, xDomainMax]},
+    y: {label: "Span [cm]", domain: [0, yDomainMax]},
     marks: [
       // Fin shape (filled polygon)
       Plot.line(

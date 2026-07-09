@@ -101,13 +101,15 @@ viewof ell_span = Inputs.range([2, 15], {value: 8, step: 0.5, label: "Span s [cm
   const c_ma = (8 * ell_cr) / (3 * Math.PI);
   // Y_ma from c(Y_ma) = c_ma
   const Y_ma = ell_span * Math.sqrt(1 - (c_ma / ell_cr) ** 2);
-  const Xcp_ell = 0.288 * ell_cr;
+  // Use fixed domains based on slider maximums (Cr max 20, s max 15)
+  const xDomain = [-12, 12];
+  const yDomain = [-1, 17];
 
   return Plot.plot({
-    aspectRatio: 1,
     width: 400,
-    x: {label: "Chord [cm]", domain: [-ell_cr * 0.7, ell_cr * 0.7]},
-    y: {label: "Span [cm]", domain: [-0.5, ell_span * 1.1]},
+    height: 400 * ((yDomain[1] - yDomain[0]) / (xDomain[1] - xDomain[0])), // ensures 1:1 ratio
+    x: {label: "Chord [cm]", domain: xDomain},
+    y: {label: "Span [cm]", domain: yDomain},
     marks: [
       Plot.line(outline, {x: "x", y: "y", fill: "#ef4444", fillOpacity: 0.25, stroke: "#ef4444", strokeWidth: 2}),
       // Body tube line
