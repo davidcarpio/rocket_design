@@ -209,9 +209,9 @@ Xcp_total = (CNa_nose * Xcp_nose + CNa_fins * Xcp_fins) / CNa_total
 // --- Stability ---
 stability_margin = (Xcp_total - cg_position) / body_diameter
 
-stability_status = stability_margin >= 1.0 ? "✅ Stable" :
-                   stability_margin >= 0.5 ? "⚠️ Marginally Stable" :
-                   "❌ Unstable"
+stability_status = stability_margin >= 1.0 ? "Stable" :
+                   stability_margin >= 0.5 ? "Marginally Stable" :
+                   "Unstable"
 
 stability_color = stability_margin >= 1.0 ? "#22c55e" :
                   stability_margin >= 0.5 ? "#eab308" :
